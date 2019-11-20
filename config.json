@@ -1,0 +1,14 @@
+[
+    {
+        "slave": {
+            "port": "/dev/Serial_A_7",
+            "baud": 115200,
+            "timeout": 1
+        },
+        "master": {
+            "port": "/dev/Serial_B_7",
+            "baud": 115200,
+            "timeout": 1
+        }
+    }
+]
