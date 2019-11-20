@@ -2,6 +2,9 @@ import argparse
 import threading
 import signal
 import serial
+import json
+
+from pathlib import PurePath
 from queue import Queue, Empty
 
 bail_event = threading.Event()
@@ -81,20 +84,27 @@ def run_master(master, baud, timeout):
         rx_thread.join()
 
 
+def load_config(config_path):
+    with open(PurePath(config_path), 'r') as config_file:
+        return json.loads(config_file.read())
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--master', dest='master', type=str, required=True, help='Master Serial Device')
-    parser.add_argument('-s', '--slave', dest='slave', type=str, required=True, help='Slave Serial Device')
-    parser.add_argument('-b', '--baud', dest='baud', default=115200, type=int, help='Device baudrate default 115200')
-    parser.add_argument('-t', '--timeout', dest='timeout', default=1, type=int, help='Serial port timeout default 1 second')
+    parser.add_argument('config', type=str, help='Serial link configuration json file')
     parsed_args = parser.parse_args()
 
-    s_thread = threading.Thread(target=run_slave, args=(parsed_args.slave, parsed_args.baud, parsed_args.timeout))
-    m_thread = threading.Thread(target=run_master, args=(parsed_args.master, parsed_args.baud, parsed_args.timeout))
+    config = load_config(parsed_args.config)
+
+    threads = []
+    for link in config:
+        threads.append(threading.Thread(target=run_slave, args=(link['slave']['port'], link['slave']['baud'], link['slave']['timeout'])))
+        threads.append(threading.Thread(target=run_slave, args=(link['master']['port'], link['master']['baud'], link['master']['timeout'])))
 
     signal.signal(signal.SIGINT, lambda _,__: bail_event.set())
 
-    s_thread.start()
-    m_thread.start()
-    s_thread.join()
-    m_thread.join()
+    for thread in threads:
+        thread.start()
+
+    for thread in threads:
+        thread.join()
