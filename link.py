@@ -36,6 +36,7 @@ class Queues:
 
 def run_slave(slave, baud, timeout):
     with serial.Serial(slave, baud, timeout=timeout) as sser:
+        print('Opened {}:{}:{}'.format(slave, baud, timeout))
 
         def tx():
             while not bail_event.is_set():
@@ -61,6 +62,7 @@ def run_slave(slave, baud, timeout):
 
 def run_master(master, baud, timeout):
     with serial.Serial(master, baud, timeout=timeout) as mser:
+        print('Opened {}:{}:{}'.format(master, baud, timeout))
 
         def tx():
             while not bail_event.is_set():
