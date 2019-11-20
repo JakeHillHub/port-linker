@@ -59,6 +59,8 @@ def run_slave(slave, baud, timeout):
         tx_thread.join()
         rx_thread.join()
 
+    print('Closed {}:{}:{}'.format(slave, baud, timeout))
+
 
 def run_master(master, baud, timeout):
     with serial.Serial(master, baud, timeout=timeout) as mser:
@@ -84,6 +86,8 @@ def run_master(master, baud, timeout):
         rx_thread.start()
         tx_thread.join()
         rx_thread.join()
+
+    print('Closed {}:{}:{}'.format(master, baud, timeout))
 
 
 def load_config(config_path):
