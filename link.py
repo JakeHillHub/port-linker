@@ -108,7 +108,7 @@ if __name__ == '__main__':
                                                     link['master']['port'], link['master']['baud'], link['master']['timeout']))
 
         threads.append(threading.Thread(target=run_slave, args=(link['slave']['port'], link['slave']['baud'], link['slave']['timeout'])))
-        threads.append(threading.Thread(target=run_slave, args=(link['master']['port'], link['master']['baud'], link['master']['timeout'])))
+        threads.append(threading.Thread(target=run_master, args=(link['master']['port'], link['master']['baud'], link['master']['timeout'])))
 
     signal.signal(signal.SIGINT, lambda _,__: bail_event.set())
 
