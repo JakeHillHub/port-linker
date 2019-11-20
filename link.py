@@ -98,6 +98,9 @@ if __name__ == '__main__':
 
     threads = []
     for link in config:
+        print('Linking {}:{}:{} to {}:{}:{}'.format(link['slave']['port'], link['slave']['baud'], link['slave']['timeout'],
+                                                    link['master']['port'], link['master']['baud'], link['master']['timeout']))
+
         threads.append(threading.Thread(target=run_slave, args=(link['slave']['port'], link['slave']['baud'], link['slave']['timeout'])))
         threads.append(threading.Thread(target=run_slave, args=(link['master']['port'], link['master']['baud'], link['master']['timeout'])))
 
