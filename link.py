@@ -2,6 +2,7 @@ import argparse
 import threading
 import signal
 import serial
+import time
 import json
 import sys
 
@@ -105,6 +106,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('config', type=str, help='Serial link configuration json file')
     parser.add_argument('alias_config', type=str, help='Alias configuration map')
+    parser.add_argument('--wait', dest='wait', default=0, type=int, help='Wait for this many seconds to attempt to connect (hack for systemd)')
     parsed_args = parser.parse_args()
 
     config = load_config(parsed_args.config)
@@ -119,6 +121,8 @@ if __name__ == '__main__':
 
         threads.append(threading.Thread(target=run_slave, args=(slave_port, link['slave']['port'], link['slave']['baud'], link['slave']['timeout'])))
         threads.append(threading.Thread(target=run_master, args=(master_port, link['slave']['port'], link['master']['baud'], link['master']['timeout'])))
+
+    time.sleep(parsed_args.wait)
 
     signal.signal(signal.SIGINT, lambda _,__: bail_event.set())
 
