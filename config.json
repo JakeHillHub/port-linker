@@ -1,12 +1,12 @@
 [
     {
         "slave": {
-            "port": "/dev/Serial_A_7",
+            "port": "DICE",
             "baud": 115200,
             "timeout": 1
         },
         "master": {
-            "port": "/dev/Serial_B_7",
+            "port": "SP0_FPGA",
             "baud": 115200,
             "timeout": 1
         }

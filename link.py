@@ -34,7 +34,7 @@ class Queues:
         return Queues._instance.queues
 
 
-def run_slave(slave, baud, timeout):
+def run_slave(slave, alias, baud, timeout):
     with serial.Serial(slave, baud, timeout=timeout) as sser:
         print('Opened {}:{}:{}'.format(slave, baud, timeout))
 
@@ -62,7 +62,7 @@ def run_slave(slave, baud, timeout):
     print('Closed {}:{}:{}'.format(slave, baud, timeout))
 
 
-def run_master(master, baud, timeout):
+def run_master(master, alias, baud, timeout):
     with serial.Serial(master, baud, timeout=timeout) as mser:
         print('Opened {}:{}:{}'.format(master, baud, timeout))
 
@@ -98,17 +98,21 @@ def load_config(config_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('config', type=str, help='Serial link configuration json file')
+    parser.add_argument('alias_config', type=str, help='Alias configuration map')
     parsed_args = parser.parse_args()
 
     config = load_config(parsed_args.config)
+    alias = load_config(parsed_args.alias_config)
 
     threads = []
     for link in config:
-        print('Linking {}:{}:{} to {}:{}:{}'.format(link['slave']['port'], link['slave']['baud'], link['slave']['timeout'],
-                                                    link['master']['port'], link['master']['baud'], link['master']['timeout']))
+        slave_port = alias[link['slave']['port']]
+        master_port = alias[link['master']['port']]
+        print('Linking {}:{}:{}:{} to {}:{}:{}:{}'.format(slave_port, link['slave']['port'], link['slave']['baud'], link['slave']['timeout'],
+                                                    master_port, link['master']['port'], link['master']['baud'], link['master']['timeout']))
 
-        threads.append(threading.Thread(target=run_slave, args=(link['slave']['port'], link['slave']['baud'], link['slave']['timeout'])))
-        threads.append(threading.Thread(target=run_master, args=(link['master']['port'], link['master']['baud'], link['master']['timeout'])))
+        threads.append(threading.Thread(target=run_slave, args=(slave_port, link['slave']['port'], link['slave']['baud'], link['slave']['timeout'])))
+        threads.append(threading.Thread(target=run_master, args=(master_port, link['slave']['port'], link['master']['baud'], link['master']['timeout'])))
 
     signal.signal(signal.SIGINT, lambda _,__: bail_event.set())
 
