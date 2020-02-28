@@ -7,4 +7,4 @@ funcy
 pydux
 
 # Usage
-`python -m run_link config.json [--wait <seconds>]`
+`python -m core.run_link config.json [--wait <seconds>]`
