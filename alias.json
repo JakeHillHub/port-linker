@@ -1,4 +1,0 @@
-{
-    "DICE": "/dev/Serial_B_7",
-    "SP0_FPGA": "/dev/Serial_A_7"
-}
