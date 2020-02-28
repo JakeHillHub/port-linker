@@ -1,8 +1,10 @@
 # Serial Linker
-Use this to link two serial ports together
+Use this to link any combination of tcp sockets and serial ports together
 
 # Requirements
 pyserial
+funcy
+pydux
 
 # Usage
-`python -m link -m /dev/<master_port> -s /dev/<slave_port>`
+`python -m run_link config.json [--wait <seconds>]`
