@@ -1,17 +1,49 @@
 {
-    "dice-serial": [
+    "connection-name": [
+        {
+            "type": "serial",
+            "id": "my-serial-1",
+            "address": "/dev/ttyUSB0",
+            "baud": 9600,
+            "timeout": 1
+        },
         {
             "type": "tcp-listener",
-            "id": "dice-serial",
+            "id": "my-tcp-1",
+            "address": "",
+            "port": 8080,
+            "timeout": 1
+        }
+    ],
+    "connection2-name": [
+        {
+            "type": "tcp-listener",
+            "id": "my-tcp-2",
             "address": "",
             "port": 8081,
             "timeout": 1
         },
         {
             "type": "tcp-listener",
-            "id": "dice-tcp-listener",
+            "id": "my-tcp-3",
             "address": "",
-            "port": 8080,
+            "port": 8082,
+            "timeout": 1
+        }
+    ],
+    "connection3-name": [
+        {
+            "type": "serial",
+            "id": "my-serial-2",
+            "address": "/dev/ttyUSB1",
+            "baud": 115200,
+            "timeout": 1
+        },
+        {
+            "type": "serial",
+            "id": "my-serial-3",
+            "address": "/dev/ttyUSB2",
+            "baud": 57600,
             "timeout": 1
         }
     ]
