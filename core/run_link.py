@@ -54,7 +54,7 @@ def await_links():
             thread.join()
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('config', type=str, help='Serial link configuration json file')
     parser.add_argument('--wait', dest='wait', default=0, type=int, help='Wait for this many seconds to attempt to connect (hack for systemd)')
@@ -69,3 +69,7 @@ if __name__ == '__main__':
 
     start_links()
     await_links()
+
+
+if __name__ == '__main__':
+    main()
