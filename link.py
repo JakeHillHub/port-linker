@@ -1,39 +1,11 @@
-import argparse
-import threading
-import signal
-import serial
-import time
-import json
 import sys
-
-from pathlib import PurePath
+import threading
 from queue import Queue, Empty
 
-bail_event = threading.Event()
+import serial
 
-
-class Queues:
-
-    _instance = None
-
-    class _Queues:
-        def __init__(self):
-            self._queues = {
-                'tx': Queue(),
-                'rx': Queue()
-            }
-
-        @property
-        def queues(self):
-            return self._queues
-
-    def __init__(self):
-        if not Queues._instance:
-            Queues._instance = Queues._Queues()
-
-    @property
-    def queues(self):
-        return Queues._instance.queues
+import state.selectors as sel
+from socket_server import serve
 
 
 def print_flush(print_str):
@@ -41,23 +13,27 @@ def print_flush(print_str):
     sys.stdout.flush()
 
 
-def run_slave(slave, alias, baud, timeout):
-    with serial.Serial(slave, baud, timeout=timeout) as sser:
-        print_flush('Opened {}:{}:{}:{}'.format(alias, slave, baud, timeout))
+def serial_link(link, rx_queue, tx_queue):
+    port = link['address']
+    baud = link['baud']
+    timeout = link['timeout']
+
+    with serial.Serial(port, baud, timeout=timeout) as sser:
+        print_flush('Opened Serial Port {}:{}:{}:{}'.format(link['id'], port, baud, timeout))
 
         def tx():
-            while not bail_event.is_set():
+            while not sel.bail_event().is_set():
                 try:
-                    tx_data = Queues().queues['rx'].get(timeout=timeout)
+                    tx_data = rx_queue.get(timeout=timeout)
                     sser.write(tx_data)
                 except Empty:
                     pass
 
         def rx():
-            while not bail_event.is_set():
+            while not sel.bail_event().is_set():
                 rx_data = sser.read()
                 if rx_data:
-                    Queues().queues['tx'].put(rx_data)
+                    tx_queue.put(rx_data)
 
         tx_thread = threading.Thread(target=tx)
         rx_thread = threading.Thread(target=rx)
@@ -66,68 +42,71 @@ def run_slave(slave, alias, baud, timeout):
         tx_thread.join()
         rx_thread.join()
 
-    print_flush('Closed {}:{}:{}:{}'.format(alias, slave, baud, timeout))
+    print_flush('Closed {}:{}:{}:{}'.format(link['id'], port, baud, timeout))
 
 
-def run_master(master, alias, baud, timeout):
-    with serial.Serial(master, baud, timeout=timeout) as mser:
-        print_flush('Opened {}:{}:{}:{}'.format(alias, master, baud, timeout))
+def tcp_listen_link(link, rx_queue, tx_queue):
+    address = link['address']
+    port = link['port']
+    timeout = link['timeout']
 
-        def tx():
-            while not bail_event.is_set():
-                try:
-                    tx_data = Queues().queues['tx'].get(timeout=timeout)
-                    mser.write(tx_data)
-                except Empty:
-                    pass
+    tcp_send_queue = Queue()
+    tcp_recv_queue = Queue()
 
-        def rx():
-            while not bail_event.is_set():
-                rx_data = mser.read()
-                if rx_data:
-                    Queues().queues['rx'].put(rx_data)
+    def _serve():
+        try:
+            serve(address, port, tcp_send_queue, tcp_recv_queue)
+        except KeyboardInterrupt:
+            pass
 
-        tx_thread = threading.Thread(target=tx)
-        rx_thread = threading.Thread(target=rx)
-        tx_thread.start()
-        rx_thread.start()
-        tx_thread.join()
-        rx_thread.join()
+    threading.Thread(target=_serve).start()
 
-    print_flush('Closed {}:{}:{}:{}'.format(alias, master, baud, timeout))
+    print_flush('TCP Listening On {}:{}:{}:{}'.format(link['id'], address, port, timeout))
+
+    def tx():
+        while not sel.bail_event().is_set():
+            try:
+                tx_data = rx_queue.get(timeout=timeout)
+                tcp_send_queue.put(tx_data)
+            except Empty:
+                pass
+
+    def rx():
+        while not sel.bail_event().is_set():
+            try:
+                tx_data = tcp_recv_queue.get(timeout=timeout)
+                tx_queue.put(tx_data)
+            except Empty:
+                pass
+
+    tx_thread = threading.Thread(target=tx)
+    rx_thread = threading.Thread(target=rx)
+    tx_thread.start()
+    rx_thread.start()
+    tx_thread.join()
+    rx_thread.join()
+
+    print_flush('TCP Listening Stopped for {}:{}:{}:{}'.format(link['id'], address, port, timeout))
 
 
-def load_config(config_path):
-    with open(PurePath(config_path), 'r') as config_file:
-        return json.loads(config_file.read())
+def create_link(link_name, link_def):
+    link1 = link_def[0]
+    link2 = link_def[1]
 
+    print_flush('Linking {} to {}'.format(link1, link2))
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('config', type=str, help='Serial link configuration json file')
-    parser.add_argument('alias_config', type=str, help='Alias configuration map')
-    parser.add_argument('--wait', dest='wait', default=0, type=int, help='Wait for this many seconds to attempt to connect (hack for systemd)')
-    parsed_args = parser.parse_args()
+    rx_queue = Queue()
+    tx_queue = Queue()
 
-    config = load_config(parsed_args.config)
-    alias = load_config(parsed_args.alias_config)
+    link_type_map = {
+        'tcp-listener': tcp_listen_link,
+        'serial': serial_link
+    }
 
-    threads = []
-    for link in config:
-        slave_port = alias[link['slave']['port']]
-        master_port = alias[link['master']['port']]
-        print_flush('Linking {}:{}:{}:{} to {}:{}:{}:{}'.format(link['slave']['port'], slave_port, link['slave']['baud'], link['slave']['timeout'],
-                                                          link['master']['port'], master_port, link['master']['baud'], link['master']['timeout']))
+    link1_t = threading.Thread(target=link_type_map[link1['type']], args=(link1, rx_queue, tx_queue))
+    link2_t = threading.Thread(target=link_type_map[link2['type']], args=(link2, tx_queue, rx_queue))
 
-        threads.append(threading.Thread(target=run_slave, args=(slave_port, link['slave']['port'], link['slave']['baud'], link['slave']['timeout'])))
-        threads.append(threading.Thread(target=run_master, args=(master_port, link['slave']['port'], link['master']['baud'], link['master']['timeout'])))
-
-    time.sleep(parsed_args.wait)
-
-    signal.signal(signal.SIGINT, lambda _,__: bail_event.set())
-
-    for thread in threads:
-        thread.start()
-
-    for thread in threads:
-        thread.join()
+    return {
+        'name': link_name,
+        'threads': (link1_t, link2_t)
+    }
