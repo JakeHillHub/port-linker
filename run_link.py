@@ -13,7 +13,7 @@ from queue import Queue, Empty
 import state.action_types as at
 import state.selectors as sel
 from state.store import store
-from link import create_link
+from core.link import create_link
 
 
 def load_config(config_path):
