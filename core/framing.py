@@ -1,4 +1,4 @@
-SLIP_FRAME_END = 0x61
+SLIP_FRAME_END = 0xC0
 def is_full_slip_frame(data):
     return data[0] == SLIP_FRAME_END and data[-1] == SLIP_FRAME_END and len(data) > 1
 
