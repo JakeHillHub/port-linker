@@ -7,8 +7,8 @@ funcy
 pydux
 
 # Usage (Install)
-`pip install port-linker`
-
+1. `pip install port-linker`
+2. `port-linker <configuration.json> [--wait <seconds>]`
 
 # Usage (Git clone)
 `python -m core.run_link config.json [--wait <seconds>]`

@@ -6,7 +6,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name='port-linker',
-    version='1.0.0',
+    version='1.0.3',
     description='Link serial ports and tcp sockets together',
     long_description=README,
     long_description_content_type="text/markdown",
