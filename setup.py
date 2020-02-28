@@ -16,8 +16,7 @@ setup(
 
     classifiers=[
         'Development Status :: 4 - Beta',
-        'Intended Audience :: Developers',
-        'Topic :: Software Development :: Tools'
+        'Intended Audience :: Developers'
     ],
 
     keywords='Tools',
