@@ -5,7 +5,7 @@ HERE = pathlib.Path(__file__).parent
 README = (HERE / "README.md").read_text()
 
 setup(
-    name='python_tools',
+    name='port-linker',
     version='1.0.0',
     description='Link serial ports and tcp sockets together',
     long_description=README,
@@ -26,5 +26,10 @@ setup(
         'pyserial',
         'pydux',
         'funcy'
-    ]
+    ],
+    entry_points={
+        "console_scripts": [
+            "port-linker=core.run_link.__main__:main",
+        ]
+    },
 )
