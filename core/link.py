@@ -5,7 +5,7 @@ from queue import Queue, Empty
 import serial
 
 import state.selectors as sel
-from socket_server import serve
+from core.socket_server import serve
 
 
 def print_flush(print_str):
