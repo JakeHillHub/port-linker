@@ -49,7 +49,7 @@ def serve(ip_address, ip_port, send_queue, recv_queue, drop=False):
         readable, writeable, exceptional = select(sockets, sockets, sockets)
         for sock in readable:
             if sock is server:
-                conn, addr = sock.accept()
+                conn, _ = sock.accept()
                 log.info(f'Accepted client: {conn.getpeername()}')
                 conn.setblocking(0)
                 sockets.append(conn)
