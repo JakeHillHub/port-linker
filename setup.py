@@ -28,7 +28,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "port-linker=core.run_link.__main__:main",
+            "port-linker=core.run_link:main",
         ]
     },
 )
