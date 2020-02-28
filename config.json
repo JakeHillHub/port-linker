@@ -1,14 +1,18 @@
-[
-    {
-        "slave": {
-            "port": "DICE",
-            "baud": 115200,
+{
+    "dice-serial": [
+        {
+            "type": "tcp-listener",
+            "id": "dice-serial",
+            "address": "",
+            "port": 8081,
             "timeout": 1
         },
-        "master": {
-            "port": "SP0_FPGA",
-            "baud": 115200,
+        {
+            "type": "tcp-listener",
+            "id": "dice-tcp-listener",
+            "address": "",
+            "port": 8080,
             "timeout": 1
         }
-    }
-]
+    ]
+}
