@@ -9,6 +9,7 @@ import state.selectors as sel
 
 log = logging.getLogger(__name__)
 
+
 def tcp_socket_server(ip_address, ip_port):
     log.info(f'Starting socket server on {ip_address}:{ip_port}')
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -26,7 +27,6 @@ def queue_multiplex(single_queue, queue_dict, drop=False):
         log.debug(f'Broadcast message: {obj}')
         for queue in queue_dict.values():
             queue.put(obj)
-
 
 
 def serve(ip_address, ip_port, send_queue, recv_queue, drop=False):
