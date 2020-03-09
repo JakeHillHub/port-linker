@@ -38,13 +38,18 @@ def serial_link(link, rx_queue, tx_queue, get_frame):
 
         def rx():
             while not sel.bail_event().is_set():
-                rx_data = sser.read()
+                try:
+                    rx_data = sser.read()
+                except serial.SerialException:
+                    continue
                 if rx_data:
                     rx_buffer.extend(rx_data)
                     frame = get_frame(rx_buffer)
                     if frame:
                         tx_queue.put(bytes(frame))
                         rx_buffer.clear()
+                else:
+                    rx_buffer.clear()
 
         tx_thread = threading.Thread(target=tx)
         rx_thread = threading.Thread(target=rx)
