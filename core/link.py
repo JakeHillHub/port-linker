@@ -6,14 +6,14 @@ import serial
 
 import state.selectors as sel
 from core.socket_server import serve
-from core.framing import factory as detect_frame_factory
+from core.framing import factory as get_frame_factory
 
 def print_flush(print_str):
     print(print_str)
     sys.stdout.flush()
 
 
-def serial_link(link, rx_queue, tx_queue, detect_frame):
+def serial_link(link, rx_queue, tx_queue, get_frame):
     port = link['address']
     baud = link['baud']
     timeout = link['timeout']
@@ -29,8 +29,9 @@ def serial_link(link, rx_queue, tx_queue, detect_frame):
                 try:
                     tx_data = rx_queue.get(timeout=timeout)
                     tx_buffer.extend(tx_data)
-                    if detect_frame(tx_buffer):
-                        sser.write(bytes(tx_buffer))
+                    frame = get_frame(tx_buffer)
+                    if frame:
+                        sser.write(bytes(frame))
                         tx_buffer.clear()
                 except Empty:
                     pass
@@ -40,8 +41,9 @@ def serial_link(link, rx_queue, tx_queue, detect_frame):
                 rx_data = sser.read()
                 if rx_data:
                     rx_buffer.extend(rx_data)
-                    if detect_frame(rx_buffer):
-                        tx_queue.put(bytes(rx_buffer))
+                    frame = get_frame(rx_buffer)
+                    if frame:
+                        tx_queue.put(bytes(frame))
                         rx_buffer.clear()
 
         tx_thread = threading.Thread(target=tx)
@@ -54,7 +56,7 @@ def serial_link(link, rx_queue, tx_queue, detect_frame):
     print_flush('Closed {}:{}:{}:{}'.format(link['id'], port, baud, timeout))
 
 
-def tcp_listen_link(link, rx_queue, tx_queue, detect_frame):
+def tcp_listen_link(link, rx_queue, tx_queue, get_frame):
     address = link['address']
     port = link['port']
     timeout = link['timeout']
@@ -80,8 +82,9 @@ def tcp_listen_link(link, rx_queue, tx_queue, detect_frame):
             try:
                 tx_data = rx_queue.get(timeout=timeout)
                 tx_buffer.extend(tx_data)
-                if detect_frame(tx_buffer):
-                    tcp_send_queue.put(bytes(tx_buffer))
+                frame = get_frame(tx_buffer)
+                if frame:
+                    tcp_send_queue.put(bytes(frame))
                     tx_buffer.clear()
             except Empty:
                 pass
@@ -91,8 +94,9 @@ def tcp_listen_link(link, rx_queue, tx_queue, detect_frame):
             try:
                 rx_data = tcp_recv_queue.get(timeout=timeout)
                 rx_buffer.extend(rx_data)
-                if detect_frame(rx_buffer):
-                    tx_queue.put(rx_data)
+                frame = get_frame(rx_buffer)
+                if frame:
+                    tx_queue.put(frame)
                     rx_buffer.clear()
             except Empty:
                 pass
@@ -122,10 +126,10 @@ def create_link(link_name, link_def):
         'serial': serial_link
     }
 
-    detect_frame = detect_frame_factory(framing)
+    get_frame = get_frame_factory(framing)
 
-    link1_t = threading.Thread(target=link_type_map[link1['type']], args=(link1, rx_queue, tx_queue, detect_frame))
-    link2_t = threading.Thread(target=link_type_map[link2['type']], args=(link2, tx_queue, rx_queue, detect_frame))
+    link1_t = threading.Thread(target=link_type_map[link1['type']], args=(link1, rx_queue, tx_queue, get_frame))
+    link2_t = threading.Thread(target=link_type_map[link2['type']], args=(link2, tx_queue, rx_queue, get_frame))
 
     return {
         'name': link_name,
